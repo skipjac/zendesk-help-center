@@ -1,45 +1,42 @@
-
-//walk the ticket field data object
-function traverse(obj,func, parent) {
-  for (i in obj){
-    func.apply(this,[i,obj[i],parent]);      
-    if (obj[i] instanceof Object && !(obj[i] instanceof Array)) {
-      traverse(obj[i],func, i);
+//this function will walk all the way down the JSON object into all the arrays and create flat JSON object. 
+function flattenObject(ob) {
+    var toReturn = {};
+    for (var i in ob) {
+        if (!ob.hasOwnProperty(i)) continue;
+        if ((typeof ob[i]) == 'object' && ob[i] !== null) {
+            var flatObject = flattenObject(ob[i]);
+            for (var x in flatObject) {
+                if (!flatObject.hasOwnProperty(x)) continue;
+                toReturn[i + '.' + x] = flatObject[x];
+            }
+        } else {
+            toReturn[i] = ob[i];
+        }
     }
-  }
+    return toReturn;
 }
-//traverse the ticket field data obj and flatten it if nested 
-function getPropertyRecursive(obj, property){
-  var acc = [];
-  traverse(obj, function(key, value, parent){
-    if(key === property){
-      acc.push({parent: parent, value: value});
-    }
-  });
-  return acc;
-}
-//set the defatul value
+// this function goes through the listOfDefaults object and searches for each default value in the listed ticket field
 function setDefaultVaule(field, setDefault){
    $('.request_custom_fields_' + field).one('DOMNodeInserted', function(d){
-     //console.log($(d.currentTarget).children('input').data('tagger'));
      var TestObj = $(d.currentTarget).children('input').data('tagger');
-     //console.log(getPropertyRecursive(TestObj, 'id'));
-     var flattenTree = getPropertyRecursive(TestObj, 'id');
-     var skip = jQuery.map(flattenTree, function(obj) {
-       if(obj.value === setDefault)
-         return obj; // or return obj.name, whatever.
-     });
-     $(d.currentTarget).val(skip[0].value);
-     $(d.target).text(skip[0].parent);
+     var test = flattenObject(TestObj);
+     var myRe = /value$/g;
+     for (var key in test) {
+      var isValue = myRe.test(key);
+      if (isValue && test[key] === setDefault) {
+          $(d.currentTarget).val(test[key]);
+          $(d.target).text(label);
+          return;
+      } else {
+         var label = test[key];
+      }
+    }
    });
   }
-//build a list of ticket field ID's and their defalut tag value
+//build a JSON object with the ticket field ID as the key to the default tag value you want to set
 var listOfDefaults = { '22103126' : 'tree__nest_in__bird_type', '21631456': 'dog'};
-//wait until things are loaded and run the function
 $(document).ready(function(){
- 
-for( key in listOfDefaults){
-  console.log(key + ' ' + listOfDefaults[key]);
-  setDefaultVaule(key, listOfDefaults[key]);
-}
-})
+ for(var key in listOfDefaults){
+   setDefaultVaule(key, listOfDefaults[key]);
+ }
+});
