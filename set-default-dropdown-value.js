@@ -20,7 +20,6 @@ function setDefaultVaule(field, setDefault){
       $('.request_custom_fields_' + field).one('DOMNodeInserted', function(d){
         var inputTar = $(d.currentTarget).children('input')
          var TestObj = inputTar.data('tagger');
-         console.log('imnput ', inputTar);
          var test = flattenObject(TestObj);
          var myRe = /value$/g;
          for (var key in test) {
